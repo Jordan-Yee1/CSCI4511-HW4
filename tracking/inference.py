@@ -61,7 +61,31 @@ def constructBayesNet(gameState: hunters.GameState):
     variableDomainsDict = {}
 
     "*** YOUR CODE HERE ***"
-    raiseNotDefined()
+    variables = [PAC, GHOST0, GHOST1, OBS0, OBS1]
+
+    edges = [(GHOST0 , OBS0) , (PAC, OBS0), (PAC , OBS1) , (GHOST1, OBS1)]
+
+    #G0 G1 and PAC could be in any position on the game area
+    gridPos = []
+    for x in range(X_RANGE):
+        for y in range(Y_RANGE):
+            gridPos.append((x, y))
+
+    variableDomainsDict[PAC]  = gridPos
+    variableDomainsDict[GHOST0] = gridPos
+    variableDomainsDict[GHOST1] = gridPos
+
+    #OBS can cover anywhere on map plus MAX_NOSIE
+    #obs = true + MAX_NOISE
+    true = (X_RANGE - 1) + (Y_RANGE - 1)
+    max_dist = true + MAX_NOISE
+
+    obsVal = []
+    for pos in range(max_dist + 1): #plus 1 because max dist is inclusive 
+        obsVal.append(pos)
+    variableDomainsDict[OBS0] = obsVal
+    variableDomainsDict[OBS1] = obsVal
+
     "*** END YOUR CODE HERE ***"
 
     net = bn.constructEmptyBayesNet(variables, edges, variableDomainsDict)
@@ -182,7 +206,9 @@ def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
             eliminationOrder = sorted(list(eliminationVariables))
 
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        factors = bayesNet.getAllCPTsWithEvidence(evidenceDict)
+        
+
         "*** END YOUR CODE HERE ***"
 
 

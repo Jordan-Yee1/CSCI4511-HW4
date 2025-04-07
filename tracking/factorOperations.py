@@ -59,6 +59,8 @@ joinFactorsByVariable = joinFactorsByVariableWithCallTracking()
 ########### QUESTION 2  ###########
 ########### ########### ###########
 
+#REFERENCED FOR UNDERSTANDING : https://en.wikipedia.org/wiki/Bayesian_network#Factorization_definition
+
 def joinFactors(factors: List[Factor]):
     """
     Input factors is a list of factors.  
@@ -102,7 +104,32 @@ def joinFactors(factors: List[Factor]):
 
 
     "*** YOUR CODE HERE ***"
-    raiseNotDefined()
+    unconditioned = set()
+    conditioned = set()
+
+    for factor in factors:
+        unconditioned.update(factor.unconditionedVariables())
+        conditioned.update(factor.conditionedVariables())
+
+    #Since set remove any factors in conditioned also in uncondiitoned
+    #Variables initially could be in conditioned
+    conditioned = conditioned - unconditioned
+
+    #print(factors)
+    #dict_values([Factor({'D'}, {'W'}, {'W': ['sun', 'rain'], 'D': ['wet', 'dry']}), Factor({'W'}, set(), {'W': ['sun', 'rain'], 'D': ['wet', 'dry']})])
+    for factor in factors: 
+        domainDict = factor.variableDomainsDict()
+        break
+    newFactor = Factor(unconditioned, conditioned, domainDict)
+
+    for assignment in newFactor.getAllPossibleAssignmentDicts():
+        product = 1.0
+        for factor in factors:
+            product *= factor.getProbability(assignment)
+        newFactor.setProbability(assignment, product)
+
+    return newFactor
+
     "*** END YOUR CODE HERE ***"
 
 ########### ########### ###########
@@ -153,7 +180,27 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        unconditioned = set(factor.unconditionedVariables())
+        unconditioned.remove(eliminationVariable)  
+        conditioned = factor.conditionedVariables()
+
+        newFactor = Factor(unconditioned, conditioned, factor.variableDomainsDict())
+
+        #by eliminating an unconditioned variable sum all values of it for new probabilities
+        #Go through domain of all assignmenrs
+        #If the variable to remove is in one of the assignemetns, sum it for the specified assignment
+        for assignment in newFactor.getAllPossibleAssignmentDicts():
+            sum = 0.0
+
+            #sum values
+            for value in factor.variableDomainsDict()[eliminationVariable]:
+                assignment[eliminationVariable] = value
+                sum += factor.getProbability(assignment)
+            
+            newFactor.setProbability(assignment, sum)
+        return newFactor
+
+
         "*** END YOUR CODE HERE ***"
 
     return eliminate
