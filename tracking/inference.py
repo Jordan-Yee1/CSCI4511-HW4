@@ -149,6 +149,8 @@ def inferenceByEnumeration(bayesNet: bn, queryVariables: List[str], evidenceDict
 
 def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
 
+#Reference Russel and Norvig section 14
+#https://www.cs.cmu.edu/~epxing/Class/10708-14/scribe_notes/scribe_note_lecture4.pdf
     def inferenceByVariableElimination(bayesNet: bn, queryVariables: List[str], evidenceDict: Dict, eliminationOrder: List[str]):
         """
         This function should perform a probabilistic inference query that
@@ -206,9 +208,25 @@ def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
             eliminationOrder = sorted(list(eliminationVariables))
 
         "*** YOUR CODE HERE ***"
+        #Eliminate then probability
         factors = bayesNet.getAllCPTsWithEvidence(evidenceDict)
         
+        for var in eliminationOrder:
+            notJoined , joinedFactor = joinFactorsByVariable(factors, var) # tuple[list[Factor], Factor] Returns a tuple of (factors not joined, resulting factor from joinFactors)
+        
+            #update factor lsit such that if there exists a factor that doesnt include var eliminate it from joinedFactor
+            #
+            if len(joinedFactor.unconditionedVariables()) > 1:
+                eliminated = eliminate(joinedFactor, var)
+                factors = notJoined + [eliminated]
+            else:
+                factors = notJoined 
+                
+        retFactor = joinFactors(factors)
 
+        retFactor = normalize(retFactor)
+
+        return retFactor
         "*** END YOUR CODE HERE ***"
 
 
@@ -349,7 +367,11 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        if self.total() == 0:
+            return
+        for key in self:
+            normalized = self[key]/self.total()
+            self[key] = normalized
         "*** END YOUR CODE HERE ***"
 
     def sample(self):
@@ -374,7 +396,15 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        #Get a random number 0 - total
+        #Get the "index" of whatever key lies within that range by adding up values up to the random value
+        rand = random.random() * self.total()
+        sum = 0
+        for key, value in self.items():
+            sum += value
+            if rand < sum:
+                return key
+        return -1
         "*** END YOUR CODE HERE ***"
 
 
@@ -449,7 +479,19 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        #Edge case where ghost in jail, if 
+        if ghostPosition == jailPosition:
+            if noisyDistance == None:
+                return 1.0
+            else:
+                return 0.0
+
+        if noisyDistance == None:
+            return 0.0
+        
+        distance = manhattanDistance(pacmanPosition, ghostPosition)
+        return busters.getObservationProbability(noisyDistance, distance)
+
         "*** END YOUR CODE HERE ***"
 
     def setGhostPosition(self, gameState, ghostPosition, index):
@@ -562,7 +604,12 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        #Go through positions of the board 
+        #Update position using obs
+    
+        for pos in self.allPositions:
+            self.beliefs[pos] = self.beliefs[pos] * (self.getObservationProb(observation, gameState.getPacmanPosition(), pos, self.getJailPosition()))
+        
         "*** END YOUR CODE HERE ***"
         self.beliefs.normalize()
     
